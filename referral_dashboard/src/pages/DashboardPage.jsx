@@ -5,6 +5,7 @@ import Navbar from "../components/Navbar";
 
 const BASE_URL =
   "https://v9fes04dwf.execute-api.eu-north-1.amazonaws.com/api/referrals";
+const ROWS_PER_PAGE = 10;
 
 function DashboardPage() {
   const navigate = useNavigate();
@@ -14,15 +15,18 @@ function DashboardPage() {
   const [serviceSummary, setServiceSummary] = useState(null);
   const [referral, setReferral] = useState(null);
   const [referrals, setReferrals] = useState([]);
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState("desc");
+  const [page, setPage] = useState(1);
 
-  async function fetchData(search = "", sort = "desc") {
+  async function fetchData(searchVal = "", sortVal = "desc") {
     setLoading(true);
     setError("");
     try {
       const token = Cookies.get("jwt_token");
       const params = new URLSearchParams();
-      if (search) params.set("search", search);
-      if (sort) params.set("sort", sort);
+      if (searchVal) params.set("search", searchVal);
+      if (sortVal) params.set("sort", sortVal);
       const url = BASE_URL + (params.toString() ? "?" + params.toString() : "");
 
       const res = await fetch(url, {
@@ -49,24 +53,64 @@ function DashboardPage() {
   }
 
   useEffect(() => {
-    fetchData();
+    fetchData("", "desc");
   }, []);
+
+  function handleSearch(e) {
+    const val = e.target.value;
+    setSearch(val);
+    setPage(1);
+    fetchData(val, sort);
+  }
+
+  function handleSort(e) {
+    const val = e.target.value;
+    setSort(val);
+    setPage(1);
+    fetchData(search, val);
+  }
 
   function copyToClipboard(text) {
     navigator.clipboard.writeText(text);
     alert("Copied!");
   }
 
+  function formatDate(d) {
+    return d ? d.replace(/-/g, "/") : "";
+  }
+
+  function formatProfit(amount) {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 0,
+    }).format(amount);
+  }
+
+  // Pagination
+  const totalRows = referrals.length;
+  const totalPages = Math.ceil(totalRows / ROWS_PER_PAGE);
+  const startIndex = (page - 1) * ROWS_PER_PAGE;
+  const currentRows = referrals.slice(startIndex, startIndex + ROWS_PER_PAGE);
+  const fromCount = totalRows === 0 ? 0 : startIndex + 1;
+  const toCount = Math.min(startIndex + ROWS_PER_PAGE, totalRows);
+
   return (
     <div className="min-h-screen bg-gray-100 font-sans flex flex-col">
       <Navbar />
 
-      <div className="max-w-5xl mx-auto w-full px-6 py-8 flex-1">
-        <h1 className="text-3xl font-bold text-indigo-900 mb-1">
+      <div className="max-w-5xl mx-auto w-full px-6 py-8 flex-1 text-left">
+        <h1
+          className="!text-2xl font-bold mb-1 text-indigo-950"
+          style={{ color: "#1e1b4b" }}
+        >
           Referral Dashboard
         </h1>
+        {/* <h1 className="text-lg font-bold mb-1 text-indigo-950">
+          Referral Dashboard
+        </h1> */}
         <p className="text-gray-500 mb-8">
-          Track your referrals, earnings, and partner activity in one place.
+          Track your referrals, earnings, and part ner activity in one place.
         </p>
 
         {loading && <p className="text-gray-500">Loading...</p>}
@@ -84,7 +128,10 @@ function DashboardPage() {
               aria-label="Overview metrics"
               className="bg-white rounded-xl shadow p-6 mb-6"
             >
-              <h2 className="text-lg font-bold text-indigo-900 mb-4">
+              <h2
+                className="text-lg font-bold text-indigo-900 mb-4"
+                style={{ color: "#1e1b4b" }}
+              >
                 Overview
               </h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -110,7 +157,10 @@ function DashboardPage() {
                 aria-label="Service summary"
                 className="bg-white rounded-xl shadow p-6 mb-6"
               >
-                <h2 className="text-lg font-bold text-indigo-900 mb-4">
+                <h2
+                  className="text-lg font-bold text-indigo-900 mb-4"
+                  style={{ color: "#1e1b4b" }}
+                >
                   Service summary
                 </h2>
                 <div className="overflow-x-auto">
@@ -158,7 +208,10 @@ function DashboardPage() {
                 aria-label="Share referral"
                 className="bg-white rounded-xl shadow p-6 mb-6"
               >
-                <h2 className="text-lg font-bold text-indigo-900 mb-4">
+                <h2
+                  className="text-lg font-bold text-indigo-900 mb-4"
+                  style={{ color: "#1e1b4b" }}
+                >
                   Refer friends and earn more
                 </h2>
 
@@ -201,6 +254,134 @@ function DashboardPage() {
                 </div>
               </section>
             )}
+
+            {/* ALL REFERRALS TABLE */}
+            <section className="bg-white rounded-xl shadow p-6 mb-6">
+              <h2
+                className="text-lg font-bold text-indigo-900 mb-4"
+                style={{ color: "#1e1b4b" }}
+              >
+                All referrals
+              </h2>
+
+              {/* Search + Sort */}
+              <div className="flex flex-wrap gap-4 mb-4 items-center">
+                <input
+                  type="text"
+                  placeholder="Name or service…"
+                  value={search}
+                  onChange={handleSearch}
+                  aria-label="Search referrals"
+                  className="border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 min-w-[220px]"
+                />
+                <label className="text-sm text-gray-600 flex items-center gap-2">
+                  Sort by date:
+                  <select
+                    value={sort}
+                    onChange={handleSort}
+                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none"
+                  >
+                    <option value="desc">Newest first</option>
+                    <option value="asc">Oldest first</option>
+                  </select>
+                </label>
+              </div>
+
+              {/* Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-gray-50 text-left">
+                      <th className="px-4 py-3 text-gray-600 font-semibold">
+                        Name
+                      </th>
+                      <th className="px-4 py-3 text-gray-600 font-semibold">
+                        Service
+                      </th>
+                      <th className="px-4 py-3 text-gray-600 font-semibold">
+                        Date
+                      </th>
+                      <th className="px-4 py-3 text-gray-600 font-semibold">
+                        Profit
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {currentRows.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={4}
+                          className="px-4 py-8 text-center text-gray-400"
+                        >
+                          No matching entries
+                        </td>
+                      </tr>
+                    ) : (
+                      currentRows.map((row) => (
+                        <tr
+                          key={row.id}
+                          onClick={() => navigate(`/referral/${row.id}`)}
+                          className="border-t border-gray-100 hover:bg-indigo-50 cursor-pointer transition"
+                        >
+                          <td className="px-4 py-3 text-gray-800">
+                            {row.name}
+                          </td>
+                          <td className="px-4 py-3 text-gray-800">
+                            {row.serviceName}
+                          </td>
+                          <td className="px-4 py-3 text-gray-800">
+                            {formatDate(row.date)}
+                          </td>
+                          <td className="px-4 py-3 text-gray-800">
+                            {formatProfit(row.profit)}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Pagination */}
+              {totalRows > 0 && (
+                <div className="flex flex-wrap items-center justify-between mt-4 gap-3">
+                  <span className="text-sm text-gray-500">
+                    Showing {fromCount}–{toCount} of {totalRows} entries
+                  </span>
+                  <div className="flex gap-2 flex-wrap">
+                    <button
+                      onClick={() => setPage(page - 1)}
+                      disabled={page === 1}
+                      className="px-3 py-1 border rounded-lg text-sm disabled:opacity-40 hover:bg-gray-50"
+                    >
+                      Previous
+                    </button>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                      (num) => (
+                        <button
+                          key={num}
+                          onClick={() => setPage(num)}
+                          className={`px-3 py-1 border rounded-lg text-sm ${
+                            num === page
+                              ? "bg-indigo-600 text-white border-indigo-600"
+                              : "hover:bg-gray-50"
+                          }`}
+                        >
+                          {num}
+                        </button>
+                      )
+                    )}
+                    <button
+                      onClick={() => setPage(page + 1)}
+                      disabled={page === totalPages}
+                      className="px-3 py-1 border rounded-lg text-sm disabled:opacity-40 hover:bg-gray-50"
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              )}
+            </section>
           </>
         )}
       </div>

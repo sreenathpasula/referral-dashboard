@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
+
 import Cookies from "js-cookie";
 
 const API_LOGIN =
