@@ -73,14 +73,13 @@ function LoginPage() {
           className="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-400"
         />
 
-        {error && <p className="text-red-500 text-sm mb-3">{error}</p>}
-
         <button
           onClick={handleSignIn}
           className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg transition duration-200"
         >
           Sign in
         </button>
+        {error && <p className="text-red-500 text-sm m-3 mt-4">{error}</p>}
       </div>
     </div>
   );

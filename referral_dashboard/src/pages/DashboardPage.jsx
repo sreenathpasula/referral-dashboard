@@ -10,6 +10,7 @@ const ROWS_PER_PAGE = 10;
 function DashboardPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [tableLoading, setTableLoading] = useState(false);
   const [error, setError] = useState("");
   const [metrics, setMetrics] = useState([]);
   const [serviceSummary, setServiceSummary] = useState(null);
@@ -19,8 +20,15 @@ function DashboardPage() {
   const [sort, setSort] = useState("desc");
   const [page, setPage] = useState(1);
 
-  async function fetchData(searchVal = "", sortVal = "desc") {
-    setLoading(true);
+  // isFirstLoad = true means first time opening page (show full loading)
+  // isFirstLoad = false means search/sort (only show table loading)
+  async function fetchData(
+    searchVal = "",
+    sortVal = "desc",
+    isFirstLoad = false
+  ) {
+    if (isFirstLoad) setLoading(true);
+    else setTableLoading(true);
     setError("");
     try {
       const token = Cookies.get("jwt_token");
@@ -37,6 +45,7 @@ function DashboardPage() {
         const err = await res.json().catch(() => ({}));
         setError(err.message || `Error ${res.status}`);
         setLoading(false);
+        setTableLoading(false);
         return;
       }
 
@@ -50,24 +59,31 @@ function DashboardPage() {
       setError("Failed to load data.");
     }
     setLoading(false);
+    setTableLoading(false);
   }
 
+  // First load passes isFirstLoad = true
   useEffect(() => {
-    fetchData("", "desc");
+    fetchData("", "desc", true);
   }, []);
+
+  const searchTimeout = React.useRef(null);
 
   function handleSearch(e) {
     const val = e.target.value;
     setSearch(val);
     setPage(1);
-    fetchData(val, sort);
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    searchTimeout.current = setTimeout(() => {
+      fetchData(val, sort, false);
+    }, 500);
   }
 
   function handleSort(e) {
     const val = e.target.value;
     setSort(val);
     setPage(1);
-    fetchData(search, val);
+    fetchData(search, val, false);
   }
 
   function copyToClipboard(text) {
@@ -87,7 +103,6 @@ function DashboardPage() {
     }).format(amount);
   }
 
-  // Pagination
   const totalRows = referrals.length;
   const totalPages = Math.ceil(totalRows / ROWS_PER_PAGE);
   const startIndex = (page - 1) * ROWS_PER_PAGE;
@@ -100,59 +115,61 @@ function DashboardPage() {
       <Navbar />
 
       <div className="max-w-5xl mx-auto w-full px-6 py-8 flex-1 text-left">
-        <h1
-          className="!text-2xl font-bold mb-1 text-indigo-950"
-          style={{ color: "#1e1b4b" }}
-        >
+        <h1 className="!text-2xl font-bold mb-1" style={{ color: "#1e1b4b" }}>
           Referral Dashboard
         </h1>
-        Dashboard
         <p className="text-gray-500 mb-8">
-          Track your referrals, earnings, and part ner activity in one place.
+          Track your referrals, earnings, and partner activity in one place.
         </p>
+
+        {/* Full page loading - only on first load */}
         {loading && <p className="text-gray-500">Loading...</p>}
         {error && (
           <p role="alert" className="text-red-500 bg-red-50 p-3 rounded-lg">
             {error}
           </p>
         )}
+
+        {/* All sections - only hidden on first load */}
         {!loading && !error && (
           <>
+            {/* OVERVIEW */}
             <section
               role="region"
               aria-label="Overview metrics"
-              className="bg-white rounded-xl shadow p-6 mb-6"
+              className="bg-white rounded-xl shadow p-6 mt-6 mb-6"
             >
               <h2
-                className="text-lg font-bold text-indigo-900 mb-4"
+                className="text-lg font-bold mb-4"
                 style={{ color: "#1e1b4b" }}
               >
                 Overview
               </h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 p-6 gap-4">
                 {metrics.map((m) => (
                   <div
                     key={m.id}
-                    className="bg-indigo-50 rounded-lg p-4 text-center"
+                    className="bg-white rounded-lg p-4 text-center shadow-md"
                   >
-                    <p className="text-xs text-gray-500 uppercase mb-1">
-                      {m.label}
-                    </p>
                     <p className="text-2xl font-bold text-indigo-900">
                       {m.value}
+                    </p>
+                    <p className="text-xs text-gray-500 uppercase mb-1">
+                      {m.label}
                     </p>
                   </div>
                 ))}
               </div>
             </section>
 
+            {/* SERVICE SUMMARY */}
             {serviceSummary && (
               <section
                 aria-label="Service summary"
                 className="bg-white rounded-xl shadow p-6 mb-6"
               >
                 <h2
-                  className="text-lg font-bold text-indigo-900 mb-4"
+                  className="text-lg font-bold mb-4"
                   style={{ color: "#1e1b4b" }}
                 >
                   Service summary
@@ -203,12 +220,11 @@ function DashboardPage() {
                 className="bg-white rounded-xl shadow p-6 mb-6"
               >
                 <h2
-                  className="text-lg font-bold text-indigo-900 mb-4"
+                  className="text-lg font-bold mb-4"
                   style={{ color: "#1e1b4b" }}
                 >
                   Refer friends and earn more
                 </h2>
-
                 <div className="mb-4">
                   <label className="block text-sm font-semibold text-gray-600 mb-1">
                     Your Referral Link
@@ -227,7 +243,6 @@ function DashboardPage() {
                     </button>
                   </div>
                 </div>
-
                 <div>
                   <label className="block text-sm font-semibold text-gray-600 mb-1">
                     Your Referral Code
@@ -252,13 +267,12 @@ function DashboardPage() {
             {/* ALL REFERRALS TABLE */}
             <section className="bg-white rounded-xl shadow p-6 mb-6">
               <h2
-                className="text-lg font-bold text-indigo-900 mb-4"
+                className="text-lg font-bold mb-4"
                 style={{ color: "#1e1b4b" }}
               >
                 All referrals
               </h2>
 
-              {/* Search + Sort */}
               <div className="flex flex-wrap gap-4 mb-4 items-center">
                 <input
                   type="text"
@@ -281,7 +295,15 @@ function DashboardPage() {
                 </label>
               </div>
 
-              <div className="overflow-x-auto">
+              {/* Table with subtle loading overlay on search */}
+              <div className="overflow-x-auto relative">
+                {tableLoading && (
+                  <div className="absolute inset-0 bg-white bg-opacity-70 flex items-center justify-center z-10 rounded-lg">
+                    <p className="text-indigo-600 font-semibold text-sm">
+                      Searching...
+                    </p>
+                  </div>
+                )}
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-gray-50 text-left">
