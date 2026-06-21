@@ -1,8 +1,10 @@
+import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Cookies from "js-cookie";
-
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
+import ReferralDetailPage from "./pages/ReferralDetailPage";
+import NotFoundPage from "./pages/NotFoundPage";
 
 function ProtectedRoute({ children }) {
   const token = Cookies.get("jwt_token");
@@ -24,11 +26,18 @@ function App() {
           }
         />
         <Route
-          path="*"
+          path="/referral/:id"
           element={
-            <div className="p-8 text-center text-2xl">404 - Page not found</div>
+            <ProtectedRoute>
+              <ReferralDetailPage />
+            </ProtectedRoute>
           }
         />
+        <Route
+          path="/dashboard/referrals"
+          element={<Navigate to="/" replace />}
+        />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </BrowserRouter>
   );

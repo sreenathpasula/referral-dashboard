@@ -106,23 +106,18 @@ function DashboardPage() {
         >
           Referral Dashboard
         </h1>
-        {/* <h1 className="text-lg font-bold mb-1 text-indigo-950">
-          Referral Dashboard
-        </h1> */}
+        Dashboard
         <p className="text-gray-500 mb-8">
           Track your referrals, earnings, and part ner activity in one place.
         </p>
-
         {loading && <p className="text-gray-500">Loading...</p>}
         {error && (
           <p role="alert" className="text-red-500 bg-red-50 p-3 rounded-lg">
             {error}
           </p>
         )}
-
         {!loading && !error && (
           <>
-            {/* OVERVIEW */}
             <section
               role="region"
               aria-label="Overview metrics"
@@ -151,7 +146,6 @@ function DashboardPage() {
               </div>
             </section>
 
-            {/* SERVICE SUMMARY */}
             {serviceSummary && (
               <section
                 aria-label="Service summary"
@@ -287,7 +281,6 @@ function DashboardPage() {
                 </label>
               </div>
 
-              {/* Table */}
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
@@ -342,7 +335,6 @@ function DashboardPage() {
                 </table>
               </div>
 
-              {/* Pagination */}
               {totalRows > 0 && (
                 <div className="flex flex-wrap items-center justify-between mt-4 gap-3">
                   <span className="text-sm text-gray-500">
@@ -386,7 +378,6 @@ function DashboardPage() {
         )}
       </div>
 
-      {/* FOOTER */}
       <footer className="bg-indigo-900 text-indigo-200 px-8 py-5">
         <div className="max-w-5xl mx-auto flex items-center justify-between flex-wrap gap-3">
           <span className="text-white font-bold">Go Business</span>
